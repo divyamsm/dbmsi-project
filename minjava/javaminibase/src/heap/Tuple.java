@@ -4,6 +4,9 @@ package heap;
 
 import java.io.*;
 import java.lang.*;
+import java.lang.reflect.Array;
+import java.util.Arrays;
+
 import global.*;
 
 
@@ -103,9 +106,12 @@ public class Tuple implements GlobalConst{
    public void tupleCopy(Tuple fromTuple)
    {
        byte [] temparray = fromTuple.getTupleByteArray();
-       System.arraycopy(temparray, 0, data, tuple_offset, tuple_length);   
-//       fldCnt = fromTuple.noOfFlds(); 
-//       fldOffset = fromTuple.copyFldOffset(); 
+  
+       System.arraycopy(temparray, 0, data, tuple_offset, tuple_length);
+       
+      // fldCnt = fromTuple.noOfFlds(); 
+
+       //fldOffset = this.copyFldOffset(); 
    }
 
    /** This is used when you don't want to use the constructor
@@ -168,6 +174,7 @@ public class Tuple implements GlobalConst{
    public byte [] getTupleByteArray() 
    {
        byte [] tuplecopy = new byte [tuple_length];
+       
        System.arraycopy(data, tuple_offset, tuplecopy, 0, tuple_length);
        return tuplecopy;
    }
@@ -241,6 +248,7 @@ public class Tuple implements GlobalConst{
    public String getStrFld(int fldNo) 
    	throws IOException, FieldNumberOutOfBoundException 
    { 
+	   //System.out.println("Number of fields: " + Integer.toString(fldCnt));
          String val;
     if ( (fldNo > 0) && (fldNo <= fldCnt))      
      {
@@ -370,6 +378,7 @@ public void setHdr (short numFlds,  AttrType types[], short strSizes[])
   fldOffset[0] = (short) ((numFlds +2) * 2 + tuple_offset);   
    
   Convert.setShortValue(fldOffset[0], pos, data);
+  
   pos +=2;
   short strCount =0;
   short incr;

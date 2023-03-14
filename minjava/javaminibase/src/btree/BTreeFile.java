@@ -19,7 +19,7 @@ import heap.*;
  * It provides an insert/delete interface.
  */
 public class BTreeFile extends IndexFile 
-  implements GlobalConst {
+  implements GlobalConst ,Serializable{
   
   private final static int MAGIC0=1989;
   
@@ -375,6 +375,9 @@ public class BTreeFile extends IndexFile
 	   
     {
       KeyDataEntry  newRootEntry;
+      
+     // System.out.println("BTreeFile.java - line 379: " + BT.getKeyLength(key));
+     // System.out.println("BTreeFile.java - line 380: " + headerPage.get_maxKeySize());
       
       if (BT.getKeyLength(key) > headerPage.get_maxKeySize())
 	throw new KeyTooLongException(null,"");

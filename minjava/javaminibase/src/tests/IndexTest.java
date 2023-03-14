@@ -361,7 +361,7 @@ class IndexDriver extends TestDriver
     int size = t.size();
     
     RID             rid;
-    Heapfile        f = null;
+    Heapfile f = null;
 
     // open existing data file
     try {

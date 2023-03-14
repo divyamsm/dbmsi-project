@@ -28,6 +28,10 @@ public interface GlobalConst {
   public static final int MAXINDEXNAME = 40;
   public static final int MAXATTRNAME  = 15;    
   public static final int MAX_NAME = 50;
+  
+  public static final int MAPSTRINGIDX = 30;
+  public static final int MAXMAPVALUE = 50;
+  public static final int TOTALMAPSIZE = 2*MAPSTRINGIDX + 16 + MAXMAPVALUE;
 
   public static final int INVALID_PAGE = -1;
 }

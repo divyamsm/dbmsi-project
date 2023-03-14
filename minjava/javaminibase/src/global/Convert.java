@@ -122,7 +122,9 @@ public class Convert{
       in = new ByteArrayInputStream(tmp);
       instr = new DataInputStream(in);
       value = instr.readUTF();
+
       return value;
+
     }
   
   /**

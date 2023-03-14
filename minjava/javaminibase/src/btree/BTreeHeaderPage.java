@@ -22,7 +22,7 @@ import heap.*;
    * magic0, rootId, keyType, maxKeySize, deleteFashion,
    * and type(=NodeType.BTHEAD)
    */
-class BTreeHeaderPage extends HFPage {
+class BTreeHeaderPage extends HFPage implements Serializable {
   
   void setPageId(PageId pageno) 
     throws IOException 
@@ -83,7 +83,9 @@ class BTreeHeaderPage extends HFPage {
   short get_keyType() 
     throws IOException
     {
+	 // System.out.println("BTreeHeaderPage.java line87: " + (short)getSlotLength(3));
       return   (short)getSlotLength(3);
+      
     }
   
   /** get the max keysize

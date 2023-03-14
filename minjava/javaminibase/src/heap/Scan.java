@@ -648,7 +648,11 @@ public class Scan implements GlobalConst{
     catch (Exception e) {
       throw new HFBufMgrException(e,"Scan.java: unpinPage() failed");
     }
+    
 
+   }
+  public RID getCurrentRid() {
+	   return userrid;
   } // end of unpinPage
 
 

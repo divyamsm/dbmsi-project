@@ -26,8 +26,8 @@ class SORTDriver extends TestDriver
 	"joon", "wawrzon", "yi-chun", "wenchao", "seo", "karsono", "dwiyono", 
 	"ginther", "keeler", "peter", "lukas", "edwards", "mirwais","schleis", 
 	"haris", "meyers", "azat", "shun-kit", "robert", "markert", "wlau",
-	"honghu", "guangshu", "chingju", "bradw", "andyw", "gray", "vharvey", 
-	"awny", "savoy", "meltz"}; 
+	"honghu", "guangshu", "chingju", "bradw", "andyw", "gray", "vharvey", "savoy", "meltz",
+	"awny"}; 
       
   private static String   data2[] = {
 	"andyw", "awny", "azat", "barthel", "binh", "bloch", "bradw", 
@@ -77,13 +77,13 @@ class SORTDriver extends TestDriver
 
     // Commands here is very machine dependent.  We assume
     // user are on UNIX system here
-    try {
-      Runtime.getRuntime().exec(remove_logcmd);
-      Runtime.getRuntime().exec(remove_dbcmd);
-    } 
-    catch (IOException e) {
-      System.err.println (""+e);
-    }
+//    try {
+//      Runtime.getRuntime().exec(remove_logcmd);
+//      Runtime.getRuntime().exec(remove_dbcmd);
+//    } 
+//    catch (IOException e) {
+//      System.err.println (""+e);
+//    }
     
     remove_logcmd = remove_cmd + newlogpath;
     remove_dbcmd = remove_cmd + newdbpath;
@@ -91,25 +91,25 @@ class SORTDriver extends TestDriver
     //This step seems redundant for me.  But it's in the original
     //C++ code.  So I am keeping it as of now, just in case I
     //I missed something
-    try {
-      Runtime.getRuntime().exec(remove_logcmd);
-      Runtime.getRuntime().exec(remove_dbcmd);
-    } 
-    catch (IOException e) {
-      System.err.println (""+e);
-    }
+//    try {
+//      Runtime.getRuntime().exec(remove_logcmd);
+//      Runtime.getRuntime().exec(remove_dbcmd);
+//    } 
+//    catch (IOException e) {
+//      System.err.println (""+e);
+//    }
 
     //Run the tests. Return type different from C++
     boolean _pass = runAllTests();
 
-    //Clean up again
-    try {
-      Runtime.getRuntime().exec(remove_logcmd);
-      Runtime.getRuntime().exec(remove_dbcmd);
-    } 
-    catch (IOException e) {
-      System.err.println (""+e);
-    }
+//    //Clean up again
+//    try {
+//      Runtime.getRuntime().exec(remove_logcmd);
+//      Runtime.getRuntime().exec(remove_dbcmd);
+//    } 
+//    catch (IOException e) {
+//      System.err.println (""+e);
+//    }
     
     System.out.println ("\n" + "..." + testName() + " tests ");
     System.out.println (_pass==OK ? "completely successfully" : "failed");
@@ -249,13 +249,17 @@ class SORTDriver extends TestDriver
       }
       count++;
 
+      System.out.println("SortTest - line260:" + outval);
+      
       try {
 	t = sort.get_next();
+	outval = t.getStrFld(1);
       }
       catch (Exception e) {
 	status = FAIL;
 	e.printStackTrace();
       }
+      
     }
     if (count < NUM_RECORDS) {
 	System.err.println("Test1 -- OOPS! too few records");

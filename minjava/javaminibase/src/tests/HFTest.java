@@ -21,13 +21,13 @@ class HFDriver extends TestDriver implements GlobalConst
   private final static boolean FAIL = false;
   
   private int choice;
-  private final static int reclen = 32;
+  private final static int reclen = 126;
   
   public HFDriver () {
     super("hptest");
-    choice = 100;      // big enough for file to occupy > 1 data page
+    // choice = 100;      // big enough for file to occupy > 1 data page
     //choice = 2000;   // big enough for file to occupy > 1 directory page
-    //choice = 5;
+    choice = 5;
   }
   
 
@@ -89,12 +89,35 @@ public boolean runTests () {
     
     return _pass;
   }
-  
+public RID midToRid(MID mid){
+    return new RID(mid.pageNo,mid.slotNo);
+  }
+
+public String converttofixed(String data,int pad)
+{
+
+	int padding=pad-data.length()-2;
+	String res = "";
+	if(padding>9) {
+		res+=Integer.toString(padding/10);
+		res+=Integer.toString(padding%10);
+	}
+	else {
+		res+="0";
+		res+=Integer.toString(padding);
+	}
+	for(int i=0;i<padding;i++) {
+		res+='$';
+	}
+	System.out.println(res+" "+data);
+	return res+data;
+}
+
   protected boolean test1 ()  {
 
     System.out.println ("\n  Test 1: Insert and scan fixed-size records\n");
     boolean status = OK;
-    RID rid = new RID();
+    MID mid = new MID();
     Heapfile f = null;
 
     System.out.println ("  - Create a heap file\n");
@@ -112,19 +135,66 @@ public boolean runTests () {
       System.err.println ("*** The heap file has left pages pinned\n");
       status = FAIL;
     }
-
+    
+    String currentFilePath = "";
+   	try{
+   		currentFilePath = new File(".").getCanonicalPath();
+   	}
+   	catch(IOException e) {
+   		e.getStackTrace();
+   	}
+   	String filename = currentFilePath +"/test_data1.csv";
+   	File file = new File(filename);
+   	String[][] values = new String[100][4];
+   	Scanner inputStream =null;
+	try {
+		inputStream = new Scanner(file);
+	} catch (FileNotFoundException e1) {
+		// TODO Auto-generated catch block
+		e1.printStackTrace();
+	}
+   	int count = 0;
     if ( status == OK ) {
       System.out.println ("  - Add " + choice + " records to the file\n");
       for (int i =0; (i < choice) && (status == OK); i++) {
 	
 	//fixed length record
-	DummyRecord rec = new DummyRecord(reclen);
-	rec.ival = i;
-	rec.fval = (float) (i*2.5);
-	rec.name = "record" + i;
-
+//	DummyRecord rec = new DummyRecord(reclen);
+    	  
+	 
+	String[] temp = null;
+	
+		String data = inputStream.next();
+		temp = data.split(",");
+		String result=converttofixed(temp[0],30)+
+		converttofixed(temp[1],30)+
+		converttofixed(temp[2],50)+
+		converttofixed(temp[3],16);
+			
+	
+	
+//	
+//	String a ="hellohellohellohellohellohello";
+//	String b="worldworldworldworldworldworld";
+//	String c="googlegggsgooglegggsgooglegggsgooglegggsgooglegggs";
+//	String d=String.format("%016d", 12);
+	
+	byte[]rec= result.getBytes();
 	try {
-	  rid = f.insertRecord(rec.toByteArray());
+		System.out.println(Integer.toString(i)+" "+Integer.toString(f.getRecCnt()));
+	}
+	catch(Exception e)
+	{
+		
+	}
+	
+//	rec.ival = i;
+//	rec.fval = (float) (i*2.5);
+//	rec.name = "record" + i;
+//	
+	
+	try {
+	  mid = f.insertMap(rec);
 	}
 	catch (Exception e) {
 	  status = FAIL;
@@ -139,6 +209,8 @@ public boolean runTests () {
 	  status = FAIL;
 	}
       }
+      
+      inputStream.close();
       
       try {
 	if ( f.getRecCnt() != choice ) {
@@ -178,7 +250,7 @@ public boolean runTests () {
 	status = FAIL;
       }
     }	
-
+    RID rid=midToRid(mid);
     if ( status == OK ) {
       int len, i = 0;
       DummyRecord rec = null;

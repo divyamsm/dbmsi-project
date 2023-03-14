@@ -1,10 +1,18 @@
 # modify the paths appropriately
-JDKPATH = /usr
+JDKPATH = ~/Downloads/jdk-13.0.2
 LIBPATH = .:..
 CLASSPATH = $(LIBPATH)
 BINPATH = $(JDKPATH)/bin
 JAVAC = $(JDKPATH)/bin/javac -classpath $(CLASSPATH)
 JAVA  = $(JDKPATH)/bin/java  -classpath $(CLASSPATH)
+
+# test cli
+
+CommanLineTest:commanLineTest.java
+	$(JAVAC) TestDriver.java commanLineTest.java
+
+commanlinetest:
+	$(JAVA) tests.commanLineTest batchinsert test_data1.csv 1 btone
 
 # test buffer manager
 
@@ -21,14 +29,6 @@ DBTest:DBTest.java
 
 dbtest: DBTest
 	$(JAVA) tests.DBTest
-
-# test heapfile 
-
-HFTest:HFTest.java
-	$(JAVAC) TestDriver.java HFTest.java
-
-hftest: HFTest
-	$(JAVA) tests.HFTest
 
 # test btree
 
@@ -70,6 +70,12 @@ SMJoin:SM_JoinTest.java
 sortmerge: SMJoin
 	$(JAVA) tests.SM_JoinTest
 
+# test heapfile 
 
+HFTest:HFTest.java
+	$(JAVAC) TestDriver.java HFTest.java
+
+hftest: HFTest
+	$(JAVA) tests.HFTest
 
 

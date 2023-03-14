@@ -44,6 +44,7 @@ public class Sort extends Iterator implements GlobalConst
   private SpoofIbuf[]  i_buf;
   private PageId[]     bufs_pids;
   private boolean useBM = true; // flag for whether to use buffer manager
+  private String hfName = null; // Name of the heapfile used for sorting
   
   /**
    * Set up for merging the runs.
@@ -556,6 +557,7 @@ public class Sort extends Iterator implements GlobalConst
    * @exception IOException from lower layers
    * @exception SortException something went wrong in the lower layer. 
    */
+  
   public Sort(AttrType[] in,         
 	      short      len_in,             
 	      short[]    str_sizes,
@@ -626,9 +628,11 @@ public class Sort extends Iterator implements GlobalConst
     n_tempfiles = ARBIT_RUNS;
     n_tuples = new int[ARBIT_RUNS]; 
     n_runs = ARBIT_RUNS;
-
+    
+    
     try {
       temp_files[0] = new Heapfile(null);
+      hfName = temp_files[0].getHeapfileName();
     }
     catch (Exception e) {
       throw new SortException(e, "Sort.java: Heapfile error");
@@ -639,7 +643,8 @@ public class Sort extends Iterator implements GlobalConst
     o_buf.init(bufs, _n_pages, tuple_size, temp_files[0], false);
     //    output_tuple = null;
     
-    max_elems_in_heap = 200;
+    //maxelements
+    max_elems_in_heap = 15000;
     sortFldLen = sort_fld_len;
     
     Q = new pnodeSplayPQ(sort_fld, in[sort_fld - 1], order);
@@ -742,6 +747,11 @@ public class Sort extends Iterator implements GlobalConst
       closeFlag = true;
     } 
   } 
+  
+  public String getFileName()
+  {
+	  return this.hfName;
+  }
 
 }
 

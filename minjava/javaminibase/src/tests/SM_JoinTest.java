@@ -10,7 +10,7 @@ import java.util.*;
 import java.lang.*;
 import diskmgr.*;
 import bufmgr.*;
-import btree.*; 
+import btree.*;
 
 /**
    Here is the implementation for the tests. There are N tests performed.
@@ -77,6 +77,7 @@ class JoinsDriver implements GlobalConst {
     boats    = new Vector();
     reserves = new Vector();
     
+    //sid, sname, rating, age
     sailors.addElement(new Sailor(53, "Bob Holloway",       9, 53.6));
     sailors.addElement(new Sailor(54, "Susan Horowitz",     1, 34.2));
     sailors.addElement(new Sailor(57, "Yannis Ioannidis",   8, 40.2));
@@ -109,6 +110,7 @@ class JoinsDriver implements GlobalConst {
     boats.addElement(new Boats(4, "Voyager",    "green"));
     boats.addElement(new Boats(5, "Wisconsin",  "red"  ));
  
+    //sid, bid, date
     reserves.addElement(new Reserves(10, 1, "05/10/95"));
     reserves.addElement(new Reserves(21, 1, "05/11/95"));
     reserves.addElement(new Reserves(10, 2, "05/11/95"));
@@ -128,22 +130,22 @@ class JoinsDriver implements GlobalConst {
     int numboats = 5;
     int numboats_attrs = 3;
     
-    String dbpath = "/tmp/"+System.getProperty("user.name")+".minibase.jointestdb"; 
-    String logpath = "/tmp/"+System.getProperty("user.name")+".joinlog";
+    String dbpath = System.getProperty("user.name")+".minibase.jointestdb"; 
+    String logpath = System.getProperty("user.name")+".joinlog";
 
-    String remove_cmd = "/bin/rm -rf ";
-    String remove_logcmd = remove_cmd + logpath;
-    String remove_dbcmd = remove_cmd + dbpath;
-    String remove_joincmd = remove_cmd + dbpath;
-
-    try {
-      Runtime.getRuntime().exec(remove_logcmd);
-      Runtime.getRuntime().exec(remove_dbcmd);
-      Runtime.getRuntime().exec(remove_joincmd);
-    }
-    catch (IOException e) {
-      System.err.println (""+e);
-    }
+//    String remove_cmd = "/bin/rm -rf ";
+//    String remove_logcmd = remove_cmd + logpath;
+//    String remove_dbcmd = remove_cmd + dbpath;
+//    String remove_joincmd = remove_cmd + dbpath;
+//
+//    try {
+//      Runtime.getRuntime().exec(remove_logcmd);
+//      Runtime.getRuntime().exec(remove_dbcmd);
+//      Runtime.getRuntime().exec(remove_joincmd);
+//    }
+//    catch (IOException e) {
+//      System.err.println (""+e);
+//    }
 
    
     /*

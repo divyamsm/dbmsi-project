@@ -27,6 +27,8 @@ public class FileScan extends  Iterator
   private int nOutFlds;
   private CondExpr[]  OutputFilter;
   public FldSpec[] perm_mat;
+  
+  boolean debug = false;
 
  
 
@@ -50,7 +52,7 @@ public class FileScan extends  Iterator
 		    short     len_in1,              
 		    int n_out_flds,
 		    FldSpec[] proj_list,
-		    CondExpr[]  outFilter        		    
+		    CondExpr[] outFilter        		    
 		    )
     throws IOException,
 	   FileScanException,
@@ -135,11 +137,22 @@ public class FileScan extends  Iterator
 	tuple1.setHdr(in1_len, _in1, s_sizes);
 	if (PredEval.Eval(OutputFilter, tuple1, null, _in1, null) == true){
 	  Projection.Project(tuple1, _in1,  Jtuple, perm_mat, nOutFlds); 
+	  //System.out.println("FileScan - line138: " + Jtuple.getStrFld(1));
+	  String[] mapFields = new String[3]; 
+	  mapFields = unpadAttributes(Jtuple.getStrFld(1), Jtuple.getStrFld(2), Jtuple.getStrFld(3));
+	  Jtuple.setStrFld(1, mapFields[0]);
+	  Jtuple.setStrFld(2, mapFields[1]);
+	  Jtuple.setStrFld(3, mapFields[2]);
+	  Jtuple.setIntFld(4, Jtuple.getIntFld(4));
+	  if(debug)
+	  {
+	  System.out.println("FileScan - line138: " + Jtuple.getStrFld(1));
+	  }
 	  return  Jtuple;
 	}        
       }
     }
-
+  
   /**
    *implement the abstract method close() from super class Iterator
    *to finish cleaning up
@@ -152,6 +165,15 @@ public class FileScan extends  Iterator
 	closeFlag = true;
       } 
     }
+  
+    //File to unpad the saved attributes
+	public String[] unpadAttributes(String RL, String CL, String Value) {
+		String[]ToUnPad= new String[3];
+		ToUnPad[0] = RL.substring(2+Integer.parseInt(RL.substring(0,2)));
+		ToUnPad[1] = CL.substring(2+Integer.parseInt(CL.substring(0,2)));
+		ToUnPad[2] = Value.substring(2+Integer.parseInt(Value.substring(0,2)));
+		return ToUnPad;
+	}
   
 }
 

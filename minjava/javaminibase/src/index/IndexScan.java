@@ -206,6 +206,7 @@ public class IndexScan extends Iterator {
       
       // not index_only, need to return the whole tuple
       rid = ((LeafData)nextentry.data).getData();
+//      System.out.println("209abc"+rid);
       try {
 	tuple1 = f.getRecord(rid);
       }

@@ -1,4 +1,4 @@
-JDKPATH = /usr
+JDKPATH = ~/Downloads/jdk-13.0.2
 LIBPATH = ~/Desktop/510/minjava/javaminibasejavaminibase/construction
 CLASSPATH = $(JDKPATH)/lib/classes.zip:.:..:$(LIBPATH)
 BINPATH = $(JDKPATH)/bin

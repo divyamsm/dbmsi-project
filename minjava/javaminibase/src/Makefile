@@ -6,8 +6,8 @@
 JARFILES=bufmgr/*.class diskmgr/*.class global/*.class iterator/*.class\
          heap/*.class chainexception/*.class  btree/*.class index/*.class tests/*.class
 
-JDKPATH = /usr
-LIBPATH = ./
+JDKPATH = ~/Downloads/jdk-13.0.2
+LIBPATH = .:..
 CLASSPATH = $(LIBPATH)
 BINPATH = $(JDKPATH)/bin
 JAVAC = $(JDKPATH)/bin/javac -classpath $(CLASSPATH)
@@ -17,7 +17,7 @@ DOCFILES=bufmgr diskmgr global chainexception heap btree iterator index
 
 ##############  update the above for each assignment in making
 
-ASSIGN=~/Desktop/510/minjava/
+ASSIGN=~Desktop/510/phase2/Database-managment-systems-implementation-Minibase/src
 LIBDIR=$(ASSIGN)/lib
 KEY=$(ASSIGN)/key
 SRC=$(ASSIGN)/src
@@ -42,7 +42,7 @@ doc:
 	$(JAVADOC) $(DOCFILES)
 
 test: 
-	cd tests; make bmtest dbtest; whoami; make hftest bttest indextest jointest sorttest sortmerge
+	cd tests; make bmtest dbtest; whoami; make commanlinetest hftest bttest indextest jointest sorttest sortmerge
 
 clean:
 	\rm -f $(CLASSPATH)/*.class *~ \#* core $(JARFILES) TRACE

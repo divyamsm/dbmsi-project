@@ -4,6 +4,7 @@ import java.io.*;
 import diskmgr.*;
 import bufmgr.*;
 import global.*;
+import bigt.*;
 
 /**  This heapfile implementation is directory-based. We maintain a
  *  directory of info about the data pages (which are of type HFPage
@@ -40,9 +41,9 @@ interface  Filetype {
   
 } // end of Filetype
 
-public class Heapfile implements Filetype,  GlobalConst {
+public class Heapfile implements Filetype,  GlobalConst ,Serializable{
   
-  
+  boolean     isHeapExist = false;
   PageId      _firstDirPageId;   // page number of header page
   int         _ftype;
   private     boolean     _file_deleted;
@@ -97,7 +98,6 @@ public class Heapfile implements Filetype,  GlobalConst {
 	   Exception
     {
       PageId currentDirPageId = new PageId(_firstDirPageId.pid);
-      
       HFPage currentDirPage = new HFPage();
       HFPage currentDataPage = new HFPage();
       RID currentDataPageRid = new RID();
@@ -228,17 +228,45 @@ public class Heapfile implements Filetype,  GlobalConst {
 	{
 	  // If the name is NULL, allocate a temporary name
 	  // and no logging is required.
-	  _fileName = "tempHeapFile";
+	  _fileName = "tempHeapFile1";
 	  String useId = new String("user.name");
 	  String userAccName;
 	  userAccName = System.getProperty(useId);
 	  _fileName = _fileName + userAccName;
 	  
+	  int hf_recCnt = 0;
+	  Heapfile hf2 = null;
+	  
+	 
+	  try {
+	  hf2 = new Heapfile(_fileName);
+	  //System.out.println("Heapfile.java line 239: " + hf2.getRecCnt());
+	  }
+	  catch(Exception e)
+	  {
+		  e.printStackTrace();
+	  }
+	  
+	  //System.out.println("Heapfile.java line 241 - Deleting file entry: " + _fileName);
+	  
 	  String filenum = Integer.toString(tempfilecount);
 	  _fileName = _fileName + filenum; 
+	  
+	  // Delete file entry if it already exists
+	  if(hf2.get_file_entry(_fileName) != null)
+	  {
+	  try {
+		  hf2.delete_file_entry(_fileName);
+		  hf2.deleteFile();
+		  }
+		  catch(Exception e)
+		  {
+			  e.printStackTrace();
+		  }
+	  }
 	  _ftype = TEMP;
 	  tempfilecount ++;
-	  
+	  //System.out.println("Heapfile.java line 241: " + _fileName);
 	}
       else
 	{
@@ -262,6 +290,9 @@ public class Heapfile implements Filetype,  GlobalConst {
       
       if(_firstDirPageId==null)
 	{
+    	
+      isHeapExist = false;	  
+    	  
 	  // file doesn't exist. First create it.
 	  _firstDirPageId = newPage(apage, 1);
 	  // check error
@@ -281,6 +312,9 @@ public class Heapfile implements Filetype,  GlobalConst {
 	  
 	  
 	}
+      else {
+    	  isHeapExist = true;
+      }
       _file_deleted = false;
       // ASSERTIONS:
       // - ALL private data members of class Heapfile are valid:
@@ -349,6 +383,9 @@ public class Heapfile implements Filetype,  GlobalConst {
       return answer;
     } // end of getRecCnt
   
+  
+  
+  
   /** Insert record into file, return its Rid.
    *
    * @param recPtr pointer of the record
@@ -376,10 +413,10 @@ public class Heapfile implements Filetype,  GlobalConst {
       int dpinfoLen = 0;	
       int recLen = recPtr.length;
       boolean found;
-      RID currentDataPageRid = new RID();
-      Page pageinbuffer = new Page();
-      HFPage currentDirPage = new HFPage();
-      HFPage currentDataPage = new HFPage();
+      RID currentDataPageRid = new RID(); // Contains the pointer to the Datapage in the DirPage
+      Page pageinbuffer = new Page(); // Creates a page in the buffer
+      HFPage currentDirPage = new HFPage(); //Creates a directory page
+      HFPage currentDataPage = new HFPage(); //Creates a datapage to store the data
       
       HFPage nextDirPage = new HFPage(); 
       PageId currentDirPageId = new PageId(_firstDirPageId.pid);
@@ -598,7 +635,252 @@ public class Heapfile implements Filetype,  GlobalConst {
       
       return rid;
       
+     
     }
+  
+
+  	
+  public MID insertMap(byte[] recMap) 
+		    throws InvalidSlotNumberException,  
+			   InvalidTupleSizeException,
+			   SpaceNotAvailableException,
+			   HFException,
+			   HFBufMgrException,
+			   HFDiskMgrException,
+			   IOException
+		    {
+		      int dpinfoLen = 0;	
+		      int recLen = recMap.length;
+		      boolean found;
+		      RID currentDataPageRid = new RID(); //not changing
+		      Page pageinbuffer = new Page();
+		      HFPage currentDirPage = new HFPage();
+		      HFPage currentDataPage = new HFPage();
+		      
+		      HFPage nextDirPage = new HFPage(); 
+		      PageId currentDirPageId = new PageId(_firstDirPageId.pid);
+		      PageId nextDirPageId = new PageId();  // OK
+		      
+		      pinPage(currentDirPageId, currentDirPage, false/*Rdisk*/);
+		      
+		      found = false;
+		      Tuple atuple;
+		      Map map;
+		      DataPageInfo dpinfo = new DataPageInfo();
+		      while (found == false)
+			{ //Start While01
+			  // look for suitable dpinfo-struct
+			  for (currentDataPageRid = currentDirPage.firstRecord();
+			       currentDataPageRid != null;
+			       currentDataPageRid = 
+				 currentDirPage.nextRecord(currentDataPageRid))
+			    {
+			      atuple = currentDirPage.getRecord(currentDataPageRid); //not changing
+			      
+			      dpinfo = new DataPageInfo(atuple);
+			      
+			      // need check the record length == DataPageInfo'slength
+			      
+			       if(recLen <= dpinfo.availspace)
+				 {
+				   found = true;
+				   break;
+				 }  
+			    }
+			  
+			  // two cases:
+			  // (1) found == true:
+			  //     currentDirPage has a datapagerecord which can accomodate
+			  //     the record which we have to insert
+			  // (2) found == false:
+			  //     there is no datapagerecord on the current directory page
+			  //     whose corresponding datapage has enough space free
+			  //     several subcases: see below
+			  if(found == false)
+			    { //Start IF01
+			      // case (2)
+			      
+			      //System.out.println("no datapagerecord on the current directory is OK");
+			      //System.out.println("dirpage availspace "+currentDirPage.available_space());
+			      
+			      // on the current directory page is no datapagerecord which has
+			      // enough free space
+			      //
+			      // two cases:
+			      //
+			      // - (2.1) (currentDirPage->available_space() >= sizeof(DataPageInfo):
+			      //         if there is enough space on the current directory page
+			      //         to accomodate a new datapagerecord (type DataPageInfo),
+			      //         then insert a new DataPageInfo on the current directory
+			      //         page
+			      // - (2.2) (currentDirPage->available_space() <= sizeof(DataPageInfo):
+			      //         look at the next directory page, if necessary, create it.
+			      
+			      if(currentDirPage.available_space() >= dpinfo.size)
+				{ 
+				  //Start IF02
+				  // case (2.1) : add a new data page record into the
+				  //              current directory page
+				  currentDataPage = _newDatapage(dpinfo); 
+				  // currentDataPage is pinned! and dpinfo->pageId is also locked
+				  // in the exclusive mode  
+				  
+				  // didn't check if currentDataPage==NULL, auto exception
+				  
+				  
+				  // currentDataPage is pinned: insert its record
+				  // calling a HFPage function
+				  
+				  
+				  
+				  atuple = dpinfo.convertToTuple(); //inserting datapagerecord so not changing
+				  
+				  byte [] tmpData = atuple.getTupleByteArray();
+				  currentDataPageRid = currentDirPage.insertRecord(tmpData);
+				  
+				  RID tmprid = currentDirPage.firstRecord();
+				  
+				  
+				  // need catch error here!
+				  if(currentDataPageRid == null)
+				    throw new HFException(null, "no space to insert rec.");  
+				  
+				  // end the loop, because a new datapage with its record
+				  // in the current directorypage was created and inserted into
+				  // the heapfile; the new datapage has enough space for the
+				  // record which the user wants to insert
+				  
+				  found = true;
+				  
+				} //end of IF02
+			      else
+				{  //Start else 02
+				  // case (2.2)
+				  nextDirPageId = currentDirPage.getNextPage();
+				  // two sub-cases:
+				  //
+				  // (2.2.1) nextDirPageId != INVALID_PAGE:
+				  //         get the next directory page from the buffer manager
+				  //         and do another look
+				  // (2.2.2) nextDirPageId == INVALID_PAGE:
+				  //         append a new directory page at the end of the current
+				  //         page and then do another loop
+				    
+				  if (nextDirPageId.pid != INVALID_PAGE) 
+				    { //Start IF03
+				      // case (2.2.1): there is another directory page:
+				      unpinPage(currentDirPageId, false);
+				      
+				      currentDirPageId.pid = nextDirPageId.pid;
+				      
+				      pinPage(currentDirPageId,
+								    currentDirPage, false);
+				      
+				      
+				      
+				      // now go back to the beginning of the outer while-loop and
+				      // search on the current directory page for a suitable datapage
+				    } //End of IF03
+				  else
+				    {  //Start Else03
+				      // case (2.2): append a new directory page after currentDirPage
+				      //             since it is the last directory page
+				      nextDirPageId = newPage(pageinbuffer, 1);
+				      // need check error!
+				      if(nextDirPageId == null)
+					throw new HFException(null, "can't new page");
+				      
+				      // initialize new directory page
+				      nextDirPage.init(nextDirPageId, pageinbuffer);
+				      PageId temppid = new PageId(INVALID_PAGE);
+				      nextDirPage.setNextPage(temppid);
+				      nextDirPage.setPrevPage(currentDirPageId);
+				      
+				      // update current directory page and unpin it
+				      // currentDirPage is already locked in the Exclusive mode
+				      currentDirPage.setNextPage(nextDirPageId);
+				      unpinPage(currentDirPageId, true/*dirty*/);
+				      
+				      currentDirPageId.pid = nextDirPageId.pid;
+				      currentDirPage = new HFPage(nextDirPage);
+				      
+				      // remark that MINIBASE_BM->newPage already
+				      // pinned the new directory page!
+				      // Now back to the beginning of the while-loop, using the
+				      // newly created directory page.
+				      
+				    } //End of else03
+				} // End of else02
+			      // ASSERTIONS:
+			      // - if found == true: search will end and see assertions below
+			      // - if found == false: currentDirPage, currentDirPageId
+			      //   valid and pinned
+			      
+			    }//end IF01
+			  else
+			    { //Start else01
+			      // found == true:
+			      // we have found a datapage with enough space,
+			      // but we have not yet pinned the datapage:
+			      
+			      // ASSERTIONS:
+			      // - dpinfo valid
+			      
+			      // System.out.println("find the dirpagerecord on current page");
+			      
+			      pinPage(dpinfo.pageId, currentDataPage, false);
+			      //currentDataPage.openHFpage(pageinbuffer);
+			      
+			      
+			    }//End else01
+			} //end of While01
+		      
+		      // ASSERTIONS:
+		      // - currentDirPageId, currentDirPage valid and pinned
+		      // - dpinfo.pageId, currentDataPageRid valid
+		      // - currentDataPage is pinned!
+		      
+		      if ((dpinfo.pageId).pid == INVALID_PAGE) // check error!
+			throw new HFException(null, "invalid PageId");
+		      
+//		      System.out.println("Heapfile.java line 812: " + currentDataPage.available_space());
+//		      System.out.println(recLen);
+		      
+		      if (!(currentDataPage.available_space() >= recLen))
+			throw new SpaceNotAvailableException(null, "no available space");
+		      
+		      if (currentDataPage == null)
+			throw new HFException(null, "can't find Data page");
+		      
+		      
+		      MID mid;
+		      mid = currentDataPage.insertMap(recMap); //1st Change
+		      //System.out.println("Heapfile; line number: " + Integer.toString(mid.slotNo) + " - " + Integer.toString(mid.pageNo.pid));
+		      
+		      //System.out.println("Heapfile.java - insertMap.java : " + new String(recMap));
+		      dpinfo.recct++;
+		      dpinfo.availspace = currentDataPage.available_space();
+		      
+		      
+		      unpinPage(dpinfo.pageId, true /* = DIRTY */);
+		      
+		      // DataPage is now released
+		      atuple = currentDirPage.returnRecord(currentDataPageRid);
+		      DataPageInfo dpinfo_ondirpage = new DataPageInfo(atuple);
+		      
+		      
+		      dpinfo_ondirpage.availspace = dpinfo.availspace;
+		      dpinfo_ondirpage.recct = dpinfo.recct;
+		      dpinfo_ondirpage.pageId.pid = dpinfo.pageId.pid;
+		      dpinfo_ondirpage.flushToTuple();
+		      
+		      
+		      unpinPage(currentDirPageId, true /* = DIRTY */);
+		      
+		      
+		      return mid; //2nd Change
+		      
+		    }
   
   /** Delete record from file with given rid.
    *
@@ -745,6 +1027,142 @@ public class Heapfile implements Filetype,  GlobalConst {
       return true;
     }
   
+  public boolean deleteMap(MID mid)  
+		    throws InvalidSlotNumberException, 
+			   InvalidTupleSizeException, 
+			   HFException, 
+			   HFBufMgrException,
+			   HFDiskMgrException,
+			   Exception
+		  
+		    {
+		      boolean status;
+		      HFPage currentDirPage = new HFPage();
+		      PageId currentDirPageId = new PageId();
+		      HFPage currentDataPage = new HFPage();
+		      PageId currentDataPageId = new PageId();
+		      RID currentDataPageRid = new RID();
+		      
+		      RID rid =mid.midToRid(mid);
+		      
+		      status = _findDataPage(rid,
+					     currentDirPageId, currentDirPage, 
+					     currentDataPageId, currentDataPage,
+					     currentDataPageRid);
+		      
+		      if(status != true) return status;	// record not found
+		      
+		      // ASSERTIONS:
+		      // - currentDirPage, currentDirPageId valid and pinned
+		      // - currentDataPage, currentDataPageid valid and pinned
+		      
+		      // get datapageinfo from the current directory page:
+		      Tuple atuple;	
+		      
+		      atuple = currentDirPage.returnRecord(currentDataPageRid);
+		      DataPageInfo pdpinfo = new DataPageInfo(atuple);
+		      
+		      // delete the Map on the datapage
+		      currentDataPage.deleteMap(mid);
+		      
+		      pdpinfo.recct--;
+		      pdpinfo.flushToTuple();	//Write to the buffer pool
+		      if (pdpinfo.recct >= 1) 
+			{
+			  // more records remain on datapage so it still hangs around.  
+			  // we just need to modify its directory entry
+			  
+			  pdpinfo.availspace = currentDataPage.available_space();
+			  pdpinfo.flushToTuple();
+			  unpinPage(currentDataPageId, true /* = DIRTY*/);
+			  
+			  unpinPage(currentDirPageId, true /* = DIRTY */);
+			  
+			  
+			}
+		      else
+			{
+			  // the record is already deleted:
+			  // we're removing the last record on datapage so free datapage
+			  // also, free the directory page if 
+			  //   a) it's not the first directory page, and 
+			  //   b) we've removed the last DataPageInfo record on it.
+			  
+			  // delete empty datapage: (does it get unpinned automatically? -NO, Ranjani)
+			  unpinPage(currentDataPageId, false /*undirty*/);
+			  
+			  freePage(currentDataPageId);
+			  
+			  // delete corresponding DataPageInfo-entry on the directory page:
+			  // currentDataPageRid points to datapage (from for loop above)
+			  
+			  currentDirPage.deleteRecord(currentDataPageRid);
+			  
+			  
+			  // ASSERTIONS:
+			  // - currentDataPage, currentDataPageId invalid
+			  // - empty datapage unpinned and deleted
+			  
+			  // now check whether the directory page is empty:
+			  
+			  currentDataPageRid = currentDirPage.firstRecord();
+			  
+			  // st == OK: we still found a datapageinfo record on this directory page
+			  PageId pageId;
+			  pageId = currentDirPage.getPrevPage();
+			  if((currentDataPageRid == null)&&(pageId.pid != INVALID_PAGE))
+			    {
+			      // the directory-page is not the first directory page and it is empty:
+			      // delete it
+			      
+			      // point previous page around deleted page:
+			      
+			      HFPage prevDirPage = new HFPage();
+			      pinPage(pageId, prevDirPage, false);
+
+			      pageId = currentDirPage.getNextPage();
+			      prevDirPage.setNextPage(pageId);
+			      pageId = currentDirPage.getPrevPage();
+			      unpinPage(pageId, true /* = DIRTY */);
+			      
+			      
+			      // set prevPage-pointer of next Page
+			      pageId = currentDirPage.getNextPage();
+			      if(pageId.pid != INVALID_PAGE)
+				{
+				  HFPage nextDirPage = new HFPage();
+				  pageId = currentDirPage.getNextPage();
+				  pinPage(pageId, nextDirPage, false);
+				  
+				  //nextDirPage.openHFpage(apage);
+				  
+				  pageId = currentDirPage.getPrevPage();
+				  nextDirPage.setPrevPage(pageId);
+				  pageId = currentDirPage.getNextPage();
+				  unpinPage(pageId, true /* = DIRTY */);
+				  
+				}
+			      
+			      // delete empty directory page: (automatically unpinned?)
+			      unpinPage(currentDirPageId, false/*undirty*/);
+			      freePage(currentDirPageId);
+			      
+			      
+			    }
+			  else
+			    {
+			      // either (the directory page has at least one more datapagerecord
+			      // entry) or (it is the first directory page):
+			      // in both cases we do not delete it, but we have to unpin it:
+			      
+			      unpinPage(currentDirPageId, true /* == DIRTY */);
+			      
+			      
+			    }
+			}
+		      return true;
+		    }
+  
   
   /** Updates the specified record in the heapfile.
    * @param rid: the record which needs update
@@ -806,6 +1224,64 @@ public class Heapfile implements Filetype,  GlobalConst {
       return true;
     }
   
+  public boolean updateMap(MID mid, Map newMap) 
+		    throws InvalidSlotNumberException, 
+			   InvalidUpdateException, 
+			   InvalidTupleSizeException,
+			   HFException, 
+			   HFDiskMgrException,
+			   HFBufMgrException,
+			   Exception
+		    {
+		      boolean status;
+		      HFPage dirPage = new HFPage();
+		      PageId currentDirPageId = new PageId();
+		      HFPage dataPage = new HFPage();
+		      PageId currentDataPageId = new PageId();
+		      RID currentDataPageRid = new RID();
+		      
+		      RID rid =mid.midToRid(mid);
+		      Map map=null;
+		      
+		      status = _findDataPage(rid,
+					     currentDirPageId, dirPage, 
+					     currentDataPageId, dataPage,
+					     currentDataPageRid);
+		      
+		      if(status != true) return status;	// record not found
+		      try {
+		    	  //Map map = new Map();
+			      map = dataPage.returnMap(mid);
+		    	  
+		      }
+		      catch(Exception e)
+		      {
+		    	  e.printStackTrace();
+		      }
+		      
+		      // Assume update a record with a record whose length is equal to
+		      // the original record
+		      
+		      if(newMap.size() != map.size())
+			{
+			  unpinPage(currentDataPageId, false /*undirty*/);
+			  unpinPage(currentDirPageId, false /*undirty*/);
+			  
+			  throw new InvalidUpdateException(null, "invalid record update");
+			  
+			}
+
+		      // new copy of this record fits in old space;
+		      map.mapCopy(newMap);
+		      unpinPage(currentDataPageId, true /* = DIRTY */);
+		      
+		      unpinPage(currentDirPageId, false /*undirty*/);
+		      
+		      
+		      return true;
+		    }
+
+  
   
   /** Read record from file, returning pointer and length.
    * @param rid Record ID
@@ -859,6 +1335,52 @@ public class Heapfile implements Filetype,  GlobalConst {
       return  atuple;  //(true?)OK, but the caller need check if atuple==NULL
       
     }
+  
+  
+  
+  public  Map getMap(MID mid) 
+		    throws InvalidSlotNumberException, 
+			   InvalidTupleSizeException, 
+			   HFException, 
+			   HFDiskMgrException,
+			   HFBufMgrException,
+			   Exception
+		    {
+		      boolean status;
+		      HFPage dirPage = new HFPage();
+		      PageId currentDirPageId = new PageId();
+		      HFPage dataPage = new HFPage();
+		      PageId currentDataPageId = new PageId();
+		      RID currentDataPageRid = new RID();
+		      
+		      RID rid =mid.midToRid(mid);
+		      
+		      status = _findDataPage(rid,
+					     currentDirPageId, dirPage, 
+					     currentDataPageId, dataPage,
+					     currentDataPageRid);
+		      
+		     
+		      
+		      if(status != true) return null; // record not found 
+		     
+		      Map map = new Map();
+		      map=dataPage.getMap(mid);
+		      
+		      /*
+		       * getMap has copied the contents of mid into recMap and fixed up
+		       * recLen also.  We simply have to unpin dirpage and datapage which
+		       * were originally pinned by _findDataPage.
+		       */    
+		      
+		      unpinPage(currentDataPageId,false /*undirty*/);
+		      
+		      unpinPage(currentDirPageId,false /*undirty*/);
+		      
+		      
+		      return  map;  //(true?)OK, but the caller need check if atuple==NULL
+		      
+		    }
   
   
   /** Initiate a sequential scan.
@@ -1043,6 +1565,12 @@ public class Heapfile implements Filetype,  GlobalConst {
 
   } // end of delete_file_entry
 
-
+  public boolean isHeapFileExst() {
+	  return isHeapExist;
+  }
   
+  public String getHeapfileName()
+  {
+	  return this._fileName;
+  }
 }// End of HeapFile 
